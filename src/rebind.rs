@@ -14,6 +14,11 @@ use crate::{
         read_keyboard,
     },
     utils::{
+        helper::{
+            insert_token,
+            is_modifier,
+            remove_token,
+        },
         mappings::token_to_event,
         types::{
             Axis,
@@ -30,7 +35,7 @@ fn is_strict_match(pressed: &KeysVector, combo: &KeysVector) -> bool {
     pressed.len() == combo.len() && pressed.iter().zip(combo).all(|(a, b)| a == b)
 }
 
-fn emit_remap(
+fn emit_input(
     virtual_keyboard: &mut VirtualDevice,
     virtual_dpimouse: &mut VirtualDevice,
     input_token: InputToken,
@@ -53,20 +58,7 @@ fn emit_remap(
     device.emit(&[input_event]).unwrap();
 }
 
-fn is_modifier(token: InputToken) -> bool {
-    matches!(
-        token,
-        InputToken::Key(evdev::KeyCode::KEY_LEFTMETA)
-            | InputToken::Key(evdev::KeyCode::KEY_LEFTALT)
-            | InputToken::Key(evdev::KeyCode::KEY_RIGHTALT)
-            | InputToken::Key(evdev::KeyCode::KEY_LEFTSHIFT)
-            | InputToken::Key(evdev::KeyCode::KEY_RIGHTSHIFT)
-            | InputToken::Key(evdev::KeyCode::KEY_LEFTCTRL)
-            | InputToken::Key(evdev::KeyCode::KEY_RIGHTCTRL)
-    )
-}
-
-fn emit_remap_sequence(
+fn emit_input_sequence(
     virtual_keyboard: &mut VirtualDevice,
     virtual_dpimouse: &mut VirtualDevice,
     keycombo: &KeysVector,
@@ -79,7 +71,7 @@ fn emit_remap_sequence(
         .collect();
 
     for key in &held_modifiers {
-        emit_remap(
+        emit_input(
             virtual_keyboard,
             virtual_dpimouse,
             *key,
@@ -88,11 +80,11 @@ fn emit_remap_sequence(
     }
 
     for key in keycombo {
-        emit_remap(virtual_keyboard, virtual_dpimouse, *key, InputValue::Press);
+        emit_input(virtual_keyboard, virtual_dpimouse, *key, InputValue::Press);
     }
 
     for key in keycombo.iter().rev() {
-        emit_remap(
+        emit_input(
             virtual_keyboard,
             virtual_dpimouse,
             *key,
@@ -101,18 +93,8 @@ fn emit_remap_sequence(
     }
 
     for key in &held_modifiers {
-        emit_remap(virtual_keyboard, virtual_dpimouse, *key, InputValue::Press);
+        emit_input(virtual_keyboard, virtual_dpimouse, *key, InputValue::Press);
     }
-}
-
-fn insert_token(pressed: &mut KeysVector, input_msg: &InputMessage) {
-    if !pressed.contains(&input_msg.token) {
-        pressed.push(input_msg.token);
-    }
-}
-
-fn remove_token(pressed: &mut KeysVector, input_msg: &InputMessage) {
-    pressed.retain(|k| *k != input_msg.token);
 }
 
 pub fn start(
@@ -145,7 +127,7 @@ pub fn start(
         );
 
         if mousemove {
-            emit_remap(
+            emit_input(
                 &mut virtual_keyboard,
                 &mut virtual_dpimouse,
                 input_msg.token,
@@ -172,7 +154,7 @@ pub fn start(
             for (original, remapped) in &config_table {
                 if is_strict_match(&pressed, original) {
                     strict_match = true;
-                    emit_remap_sequence(
+                    emit_input_sequence(
                         &mut virtual_keyboard,
                         &mut virtual_dpimouse,
                         remapped,
@@ -187,7 +169,7 @@ pub fn start(
             }
 
             if !strict_match {
-                emit_remap(
+                emit_input(
                     &mut virtual_keyboard,
                     &mut virtual_dpimouse,
                     input_msg.token,
