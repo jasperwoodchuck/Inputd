@@ -13,11 +13,25 @@ pub enum Magnitude {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub enum Input {
+pub enum InputToken {
 	Key(KeyCode),
 	Btn(KeyCode),
-	Delta(Axis, Magnitude),
-	Wheel(Axis, Magnitude),
+	MouseDelta(Axis, Magnitude),
+	MouseWheel(Axis, Magnitude),
 }
 
-pub type Hotkey = Vec<Input>;
+#[derive(Debug)]
+pub enum InputValue {
+	Press,
+	Release,
+	Repeat,
+	Delta(i32),
+}
+
+#[derive(Debug)]
+pub struct InputMessage {
+	pub token: InputToken,
+	pub value: InputValue,
+}
+
+pub type Hotkey = Vec<InputToken>;

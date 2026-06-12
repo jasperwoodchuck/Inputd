@@ -1,5 +1,5 @@
 use crate::{
-	input::mapping::str_to_input,
+	input::mapping::str_to_input_token,
 	lang::{
 		ast::{
 			Binding,
@@ -66,7 +66,7 @@ impl Parser {
 				},
 			};
 
-			let input = str_to_input(&name).map_err(|err| self.error(err))?;
+			let input = str_to_input_token(&name).map_err(|err| self.error(err))?;
 
 			hotkey.push(input);
 
