@@ -1,6 +1,9 @@
 [package]
 name = "inputd"
-version = "0.1.0"
+version = "0.1.0-alpha.1"
 edition = "2024"
 
 [dependencies]
+evdev = "0.13.2"
+logos = "0.16.1"
+phf = { version = "0.13.1", features = ["macros"] }
