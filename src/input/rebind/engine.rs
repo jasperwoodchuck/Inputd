@@ -69,6 +69,11 @@ pub fn start(
 		}
 
 		runtime.handle_input_values(&message);
+
+		if runtime.is_quit_combo() {
+			break;
+		}
+
 		runtime.handle_input_states(&message);
 	}
 }

@@ -3,7 +3,10 @@ use std::time::{
 	Instant,
 };
 
-use evdev::uinput::VirtualDevice;
+use evdev::{
+	KeyCode,
+	uinput::VirtualDevice,
+};
 
 use crate::{
 	input::rebind::emit::{
@@ -166,6 +169,17 @@ impl Runtime {
 				self.pending = None;
 			},
 		}
+	}
+
+	pub fn is_quit_combo(&self) -> bool {
+		const QUIT_COMBO: &[InputToken] = &[
+			InputToken::Key(KeyCode::KEY_LEFTCTRL),
+			InputToken::Key(KeyCode::KEY_LEFTALT),
+			InputToken::Key(KeyCode::KEY_LEFTSHIFT),
+			InputToken::Key(KeyCode::KEY_DELETE),
+		];
+		self.pressed.len() == QUIT_COMBO.len()
+			&& QUIT_COMBO.iter().all(|input| self.pressed.contains(input))
 	}
 
 	pub(crate) fn on_timeout(&mut self) {
