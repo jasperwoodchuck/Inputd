@@ -12,12 +12,35 @@ use crate::types::input::{
 		Y,
 	},
 	InputToken,
+	InputValue,
 	Magnitude::{
 		self,
 		Negative,
 		Positive,
 	},
 };
+
+#[inline]
+fn input_event_rel(code: u16, value: i32) -> InputEvent {
+	InputEvent::new(EventType::RELATIVE.0, code, value)
+}
+
+#[rustfmt::skip]
+pub fn input_token_to_event(input_token: &InputToken, value: i32) -> InputEvent {
+	match input_token {
+		InputToken::Key(keycode)  => InputEvent::new(EventType::KEY.0, keycode.code(), value),
+		InputToken::Btn(keycode)  => InputEvent::new(EventType::KEY.0, keycode.code(), value),
+
+		InputToken::MouseDelta(Y, _) => input_event_rel(RelativeAxisCode::REL_Y.0, value),
+		InputToken::MouseDelta(X, _) => input_event_rel(RelativeAxisCode::REL_X.0, value),
+
+		InputToken::MouseWheel(Y, Positive) => input_event_rel(RelativeAxisCode::REL_WHEEL.0,  1),
+		InputToken::MouseWheel(Y, Negative) => input_event_rel(RelativeAxisCode::REL_WHEEL.0, -1),
+
+		InputToken::MouseWheel(X, Positive) => input_event_rel(RelativeAxisCode::REL_HWHEEL.0,  1),
+		InputToken::MouseWheel(X, Negative) => input_event_rel(RelativeAxisCode::REL_HWHEEL.0, -1),
+	}
+}
 
 #[rustfmt::skip]
 pub fn magnitude_to_i32(magnitude: &Magnitude) -> i32 {
@@ -27,6 +50,15 @@ pub fn magnitude_to_i32(magnitude: &Magnitude) -> i32 {
     }
 }
 
+#[rustfmt::skip]
+pub fn input_value_to_i32(input_value: &InputValue) -> i32 {
+    match input_value {
+        InputValue::Press   => 1,
+        InputValue::Release => 0,
+        InputValue::Repeat  => 2,
+        InputValue::Delta(value) => *value,
+    }
+}
 #[rustfmt::skip]
 pub static INPUTS: phf::Map<&'static str, InputToken> = phf_map! {
     "A" => InputToken::Key(KeyCode::KEY_A),

@@ -14,15 +14,17 @@ use crate::{
 		lexer::tokenize,
 		parser::core::Parser,
 	},
+	utils::helper::binding_to_dict,
 };
 
 mod config;
 mod input;
 mod lang;
 mod types;
+mod utils;
 
 fn main() {
-	let passthrough_inputs = true;
+	let passthrough_inputs = false;
 
 	let keyboard_path = "";
 	let mousedev_path = "";
@@ -31,8 +33,8 @@ fn main() {
 	let mut mousedev = unwrap_or!(open_device(mousedev_path), return);
 
 	if !passthrough_inputs {
-		keyboard.grab().expect("failed to grab keyboard");
-		mousedev.grab().expect("failed to grab mouse");
+		unwrap_or!(keyboard.grab(), return);
+		unwrap_or!(mousedev.grab(), return);
 	}
 
 	let virtual_keyboard = unwrap_or!(virtual_keyboard(), return);
@@ -45,5 +47,13 @@ fn main() {
 
 	let config = unwrap_or!(parser.parse_program(), return);
 
-	rebind::engine::start(keyboard, mousedev);
+	let rebind_dict = binding_to_dict(config.bindings);
+
+	rebind::engine::start(
+		rebind_dict,
+		virtual_keyboard,
+		virtual_mousedev,
+		keyboard,
+		mousedev,
+	);
 }

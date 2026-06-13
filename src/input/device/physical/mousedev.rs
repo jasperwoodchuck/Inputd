@@ -27,12 +27,10 @@ fn handle_wheel(tx: &mpsc::Sender<InputMessage>, axis: Axis, magnitude: Magnitud
 	.expect("failed to send input event");
 }
 
-fn handle_delta(tx: &mpsc::Sender<InputMessage>, axis: Axis, magnitude: Magnitude) {
-	let delta = magnitude_to_i32(&magnitude);
-
+fn handle_delta(tx: &mpsc::Sender<InputMessage>, axis: Axis, magnitude: Magnitude, value: i32) {
 	tx.send(InputMessage {
 		token: InputToken::MouseDelta(axis, magnitude),
-		value: InputValue::Delta(delta),
+		value: InputValue::Delta(value),
 	})
 	.expect("failed to send input event");
 }
@@ -56,19 +54,19 @@ fn handle_relative_axis(tx: &mpsc::Sender<InputMessage>, axis_code: RelativeAxis
 		},
 
 		RelativeAxisCode::REL_X if value > 0 => {
-			handle_delta(tx, Axis::X, Magnitude::Positive);
+			handle_delta(tx, Axis::X, Magnitude::Positive, value);
 		},
 
 		RelativeAxisCode::REL_X if value < 0 => {
-			handle_delta(tx, Axis::X, Magnitude::Negative);
+			handle_delta(tx, Axis::X, Magnitude::Negative, value);
 		},
 
 		RelativeAxisCode::REL_Y if value > 0 => {
-			handle_delta(tx, Axis::Y, Magnitude::Positive);
+			handle_delta(tx, Axis::Y, Magnitude::Positive, value);
 		},
 
 		RelativeAxisCode::REL_Y if value < 0 => {
-			handle_delta(tx, Axis::Y, Magnitude::Negative);
+			handle_delta(tx, Axis::Y, Magnitude::Negative, value);
 		},
 
 		_ => {},
