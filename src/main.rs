@@ -6,7 +6,10 @@ use crate::{
 				virtual_keyboard,
 				virtual_mousedev,
 			},
-			physical::open::open_device,
+			physical::open::{
+				open_device,
+				wait_for_clean_input_state,
+			},
 		},
 		rebind,
 	},
@@ -31,6 +34,8 @@ fn main() {
 
 	let mut keyboard = unwrap_or!(open_device(keyboard_path), return);
 	let mut mousedev = unwrap_or!(open_device(mousedev_path), return);
+
+	wait_for_clean_input_state(&keyboard, &mousedev);
 
 	if !passthrough_inputs {
 		unwrap_or!(keyboard.grab(), return);
