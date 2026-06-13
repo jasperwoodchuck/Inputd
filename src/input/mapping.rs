@@ -26,7 +26,9 @@ fn input_event_rel(code: u16, value: i32) -> InputEvent {
 }
 
 #[rustfmt::skip]
-pub fn input_token_to_event(input_token: &InputToken, value: i32) -> InputEvent {
+pub fn input_to_event(input_token: &InputToken, input_value: &InputValue) -> InputEvent {
+	let value = input_value_to_i32(input_value);
+
 	match input_token {
 		InputToken::Key(keycode)  => InputEvent::new(EventType::KEY.0, keycode.code(), value),
 		InputToken::Btn(keycode)  => InputEvent::new(EventType::KEY.0, keycode.code(), value),

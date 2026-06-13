@@ -72,14 +72,12 @@ impl Runtime {
 	}
 
 	pub(crate) fn passthrough(&mut self, message: &InputMessage) {
-		if let Err(err) = emit_input(
+		emit_input(
 			&mut self.virtual_keyboard,
 			&mut self.virtual_mousedev,
 			&message.token,
 			&message.value,
-		) {
-			eprintln!("failed to emit input: {err}");
-		}
+		);
 	}
 
 	fn compare_pressed(&self) -> MatchMode {
@@ -109,13 +107,12 @@ impl Runtime {
 	fn execute_action(&mut self, action: Action) {
 		match action {
 			Action::Emit(remapped) => {
-				if let Err(err) = emit_input_sequence(
+				emit_input_sequence(
 					&mut self.virtual_keyboard,
 					&mut self.virtual_mousedev,
+					&self.pressed,
 					&remapped,
-				) {
-					eprintln!("failed to emit input sequence: {err}");
-				}
+				);
 			},
 
 			Action::Disable => {},

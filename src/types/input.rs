@@ -48,3 +48,19 @@ pub struct InputMessage {
 
 pub type Hotkey = Vec<InputToken>;
 pub type RebindDict = HashMap<Hotkey, Action>;
+
+impl InputToken {
+	pub fn is_modifier(&self) -> bool {
+		matches!(
+			self,
+			InputToken::Key(KeyCode::KEY_LEFTCTRL)
+				| InputToken::Key(KeyCode::KEY_RIGHTCTRL)
+				| InputToken::Key(KeyCode::KEY_LEFTSHIFT)
+				| InputToken::Key(KeyCode::KEY_RIGHTSHIFT)
+				| InputToken::Key(KeyCode::KEY_LEFTALT)
+				| InputToken::Key(KeyCode::KEY_RIGHTALT)
+				| InputToken::Key(KeyCode::KEY_LEFTMETA)
+				| InputToken::Key(KeyCode::KEY_RIGHTMETA)
+		)
+	}
+}
