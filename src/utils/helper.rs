@@ -1,10 +1,6 @@
 use crate::{
 	lang::ast::Binding,
-	types::input::{
-		InputMessage,
-		InputToken,
-		RebindDict,
-	},
+	types::input::RebindDict,
 };
 
 pub fn binding_to_dict(bindings: Vec<Binding>) -> RebindDict {
@@ -14,12 +10,12 @@ pub fn binding_to_dict(bindings: Vec<Binding>) -> RebindDict {
 		.collect()
 }
 
-pub fn insert_token(tokens: &mut Vec<InputToken>, input_msg: &InputMessage) {
-	if !tokens.contains(&input_msg.token) {
-		tokens.push(input_msg.token);
+pub fn insert_unique<T: PartialEq>(items: &mut Vec<T>, item: T) {
+	if !items.contains(&item) {
+		items.push(item);
 	}
 }
 
-pub fn remove_token(tokens: &mut Vec<InputToken>, input_msg: &InputMessage) {
-	tokens.retain(|k| *k != input_msg.token);
+pub fn remove_item<T: PartialEq>(items: &mut Vec<T>, item: &T) {
+	items.retain(|x| x != item);
 }

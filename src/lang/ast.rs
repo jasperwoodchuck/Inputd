@@ -13,7 +13,7 @@ pub struct Binding {
 	pub action: Action,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Action {
 	Emit(Hotkey),
 	Disable,

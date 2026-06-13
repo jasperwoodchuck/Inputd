@@ -15,6 +15,7 @@ use crate::{
 	},
 	lang::ast::Action,
 	types::input::{
+		Hotkey,
 		InputMessage,
 		InputToken,
 		InputValue,
@@ -22,8 +23,8 @@ use crate::{
 		RebindDict,
 	},
 	utils::helper::{
-		insert_token,
-		remove_token,
+		insert_unique,
+		remove_item,
 	},
 };
 
@@ -36,8 +37,9 @@ pub struct Runtime {
 	virtual_keyboard: VirtualDevice,
 	virtual_mousedev: VirtualDevice,
 
-	pressed: Vec<InputToken>,
-	pending: Option<Action>,
+	pressed_tokens: Hotkey,
+	pending_action: Option<Action>,
+	held_actions: Vec<Action>,
 }
 
 impl Runtime {
@@ -45,7 +47,6 @@ impl Runtime {
 
 	pub(crate) fn new(
 		rebind_dict: RebindDict,
-
 		virtual_keyboard: VirtualDevice,
 		virtual_mousedev: VirtualDevice,
 	) -> Self {
@@ -57,8 +58,9 @@ impl Runtime {
 			deadline: Instant::now() + timeout_duration,
 			virtual_keyboard,
 			virtual_mousedev,
-			pressed: Vec::<InputToken>::new(),
-			pending: None,
+			pressed_tokens: Vec::<InputToken>::new(),
+			pending_action: None,
+			held_actions: Vec::<Action>::new(),
 		}
 	}
 
@@ -81,7 +83,7 @@ impl Runtime {
 	}
 
 	fn compare_pressed(&self) -> MatchMode {
-		if self.pressed.is_empty() {
+		if self.pressed_tokens.is_empty() {
 			return MatchMode::None;
 		}
 
@@ -89,9 +91,9 @@ impl Runtime {
 		let mut prefix = false;
 
 		for combo in self.rebind_dict.keys() {
-			if self.pressed == *combo {
+			if self.pressed_tokens == *combo {
 				strict = true;
-			} else if combo.starts_with(&self.pressed) {
+			} else if combo.starts_with(&self.pressed_tokens) {
 				prefix = true;
 			}
 		}
@@ -104,14 +106,15 @@ impl Runtime {
 		}
 	}
 
-	fn execute_action(&mut self, action: Action) {
+	fn execute_action(&mut self, action: &Action, input_value: InputValue) {
 		match action {
 			Action::Emit(remapped) => {
 				emit_input_sequence(
 					&mut self.virtual_keyboard,
 					&mut self.virtual_mousedev,
-					&self.pressed,
-					&remapped,
+					&self.pressed_tokens,
+					remapped,
+					input_value,
 				);
 			},
 
@@ -122,18 +125,21 @@ impl Runtime {
 	pub(crate) fn handle_input_values(&mut self, message: &InputMessage) {
 		match message.value {
 			InputValue::Press => {
-				insert_token(&mut self.pressed, message);
+				insert_unique(&mut self.pressed_tokens, message.token);
 				self.reset_deadline();
 			},
 
 			InputValue::Release => {
-				remove_token(&mut self.pressed, message);
+				while let Some(action) = self.held_actions.pop() {
+					self.execute_action(&action, InputValue::Release);
+				}
+				remove_item(&mut self.pressed_tokens, &message.token);
 				self.reset_deadline();
 			},
 
 			InputValue::Repeat => {},
 			InputValue::Delta(_) => {
-				insert_token(&mut self.pressed, message);
+				insert_unique(&mut self.pressed_tokens, message.token);
 			},
 		}
 	}
@@ -142,28 +148,30 @@ impl Runtime {
 		match self.compare_pressed() {
 			MatchMode::None => {
 				self.passthrough(message);
-				self.pending = None;
+				self.pending_action = None;
 			},
 
 			MatchMode::Both => {
 				if matches!(message.value, InputValue::Release) {
 					self.passthrough(message);
 				}
-				self.pending = self.rebind_dict.get(&self.pressed).cloned();
+				self.pending_action = self.rebind_dict.get(&self.pressed_tokens).cloned();
 			},
 
 			MatchMode::Prefix => {
 				if matches!(message.value, InputValue::Release) {
 					self.passthrough(message);
 				}
-				self.pending = Some(Action::Emit(self.pressed.clone()));
+				self.pending_action = Some(Action::Emit(self.pressed_tokens.clone()));
 			},
 
 			MatchMode::Strict => {
-				if let Some(action) = self.rebind_dict.get(&self.pressed).cloned() {
-					self.execute_action(action);
+				if let Some(action) = self.rebind_dict.get(&self.pressed_tokens).cloned() {
+					self.execute_action(&action, InputValue::Press);
+
+					insert_unique(&mut self.held_actions, action);
 				}
-				self.pending = None;
+				self.pending_action = None;
 			},
 		}
 	}
@@ -175,20 +183,24 @@ impl Runtime {
 			InputToken::Key(KeyCode::KEY_LEFTSHIFT),
 			InputToken::Key(KeyCode::KEY_DELETE),
 		];
-		self.pressed.len() == QUIT_COMBO.len()
-			&& QUIT_COMBO.iter().all(|input| self.pressed.contains(input))
+		self.pressed_tokens.len() == QUIT_COMBO.len()
+			&& QUIT_COMBO
+				.iter()
+				.all(|input| self.pressed_tokens.contains(input))
 	}
 
 	pub(crate) fn on_timeout(&mut self) {
-		if let Some(action) = self.pending.take() {
-			self.execute_action(action);
+		if let Some(action) = self.pending_action.take() {
+			self.execute_action(&action, InputValue::Press);
+
+			insert_unique(&mut self.held_actions, action);
 		}
-		self.pending = None;
+		self.pending_action = None;
 	}
 
 	pub fn clean_delta(&mut self, input_msg: &InputMessage) {
 		if matches!(input_msg.value, InputValue::Delta(_)) {
-			remove_token(&mut self.pressed, input_msg);
+			remove_item(&mut self.pressed_tokens, &input_msg.token);
 		}
 	}
 }

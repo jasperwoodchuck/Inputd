@@ -60,43 +60,52 @@ fn emit_many_rev(
 	}
 }
 
+fn modifiers(inputs: &[InputToken]) -> Vec<InputToken> {
+	inputs.iter().filter(|i| i.is_modifier()).copied().collect()
+}
+
 pub fn emit_input_sequence(
 	virtual_keyboard: &mut VirtualDevice,
 	virtual_mousedev: &mut VirtualDevice,
 	original_inputs: &[InputToken],
 	remapped_inputs: &[InputToken],
+	value: InputValue,
 ) {
-	let modifiers: Vec<_> = original_inputs
-		.iter()
-		.filter(|i| i.is_modifier())
-		.copied()
-		.collect();
+	let modifiers = modifiers(original_inputs);
 
-	emit_many(
-		virtual_keyboard,
-		virtual_mousedev,
-		&modifiers,
-		InputValue::Release,
-	);
+	match value {
+		InputValue::Press => {
+			emit_many(
+				virtual_keyboard,
+				virtual_mousedev,
+				&modifiers,
+				InputValue::Release,
+			);
 
-	emit_many(
-		virtual_keyboard,
-		virtual_mousedev,
-		remapped_inputs,
-		InputValue::Press,
-	);
+			emit_many(
+				virtual_keyboard,
+				virtual_mousedev,
+				remapped_inputs,
+				InputValue::Press,
+			);
+		},
 
-	emit_many_rev(
-		virtual_keyboard,
-		virtual_mousedev,
-		remapped_inputs,
-		InputValue::Release,
-	);
+		InputValue::Release => {
+			emit_many_rev(
+				virtual_keyboard,
+				virtual_mousedev,
+				remapped_inputs,
+				InputValue::Release,
+			);
 
-	emit_many(
-		virtual_keyboard,
-		virtual_mousedev,
-		&modifiers,
-		InputValue::Press,
-	);
+			emit_many(
+				virtual_keyboard,
+				virtual_mousedev,
+				&modifiers,
+				InputValue::Press,
+			);
+		},
+
+		InputValue::Repeat | InputValue::Delta(_) => {},
+	}
 }
