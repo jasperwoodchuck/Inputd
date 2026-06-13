@@ -75,5 +75,7 @@ pub fn start(
 		}
 
 		runtime.handle_input_states(&message);
+
+		runtime.clean_delta(&message);
 	}
 }

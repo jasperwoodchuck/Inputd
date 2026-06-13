@@ -188,4 +188,10 @@ impl Runtime {
 		}
 		self.pending = None;
 	}
+
+	pub fn clean_delta(&mut self, input_msg: &InputMessage) {
+		if matches!(input_msg.value, InputValue::Delta(_)) {
+			remove_token(&mut self.pressed, input_msg);
+		}
+	}
 }
