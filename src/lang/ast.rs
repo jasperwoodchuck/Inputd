@@ -3,6 +3,8 @@ use crate::types::input::Hotkey;
 #[derive(Debug)]
 pub struct Program {
 	pub bindings: Vec<Binding>,
+	pub keyboard: String,
+	pub mousedev: String,
 }
 
 #[derive(Debug)]

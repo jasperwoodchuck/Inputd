@@ -7,7 +7,7 @@ use crate::lang::{
 
 impl Parser {
 	pub(crate) fn parse_action(&mut self) -> Result<Action, LangError> {
-		match self.current().map(|spanned_token| &spanned_token.token) {
+		match self.current_token() {
 			Some(Token::Disable) => {
 				self.advance();
 				Ok(Action::Disable)

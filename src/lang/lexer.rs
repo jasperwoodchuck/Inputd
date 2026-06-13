@@ -56,6 +56,12 @@ pub enum Token {
 	#[token("::")]
 	Rebind,
 
+	#[token("Keyboard")]
+	Keyboard,
+
+	#[token("Mouse")]
+	MouseDev,
+
 	#[token("Disable")]
 	Disable,
 

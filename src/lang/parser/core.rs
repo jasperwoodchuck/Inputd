@@ -33,6 +33,10 @@ impl Parser {
 		self.pos += 1;
 	}
 
+	pub(crate) fn current_token(&self) -> Option<&Token> {
+		self.current().map(|spanned_token| &spanned_token.token)
+	}
+
 	pub(crate) fn skip_eol(&mut self) {
 		while let Some(spanned_token) = self.current() {
 			if spanned_token.token != Token::Eol {
@@ -46,6 +50,14 @@ impl Parser {
 	pub(crate) fn error(&self, message: String) -> LangError {
 		let span = self.current().map(|token| token.span.clone());
 
+		LangError {
+			message,
+			span,
+			source: self.source.clone(),
+		}
+	}
+
+	pub(crate) fn error_at(&self, span: Option<Span>, message: String) -> LangError {
 		LangError {
 			message,
 			span,

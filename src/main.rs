@@ -27,10 +27,16 @@ mod types;
 mod utils;
 
 fn main() {
+	let source = unwrap_or!(load_config(), return);
+	let tokens = unwrap_or!(tokenize(&source), return);
+
+	let mut parser = Parser::new(tokens, source);
+
+	let config = unwrap_or!(parser.parse_program(), return);
 	let passthrough_inputs = false;
 
-	let keyboard_path = "";
-	let mousedev_path = "";
+	let keyboard_path = &config.keyboard;
+	let mousedev_path = &config.mousedev;
 
 	let mut keyboard = unwrap_or!(open_device(keyboard_path), return);
 	let mut mousedev = unwrap_or!(open_device(mousedev_path), return);
@@ -44,13 +50,6 @@ fn main() {
 
 	let virtual_keyboard = unwrap_or!(virtual_keyboard(), return);
 	let virtual_mousedev = unwrap_or!(virtual_mousedev(), return);
-
-	let source = unwrap_or!(load_config(), return);
-	let tokens = unwrap_or!(tokenize(&source), return);
-
-	let mut parser = Parser::new(tokens, source);
-
-	let config = unwrap_or!(parser.parse_program(), return);
 
 	let rebind_dict = binding_to_dict(config.bindings);
 
